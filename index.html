@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التخزين السحابي - Cloud Storage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            text-align: center;
+            margin: 10px;
+        }
+
+        .feature div {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature span {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo floating">☁️</div>
+        <h1>التخزين السحابي الآمن</h1>
+        <p class="subtitle">خزن ملفاتك بأمان وسهولة</p>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <div>📁</div>
+            <p class="upload-text">اضغط هنا أو اسحب الملفات للرفع</p>
+            <p style="color: #999; font-size: 14px;">PDF, PNG, JPG, MP4 حتى 100MB</p>
+        </div>
+        
+        <input type="file" id="fileInput" class="file-input" multiple>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+        
+        <button class="upload-btn" onclick="uploadFile()" id="uploadBtn">رفع الملفات</button>
+        
+        <div class="loading" id="loading">
+            <p>جاري رفع الملفات... ⏳</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div>🔒</div>
+                <span>آمن</span>
+            </div>
+            <div class="feature">
+                <div>⚡</div>
+                <span>سريع</span>
+            </div>
+            <div class="feature">
+                <div>💾</div>
+                <span>موثوق</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const loading = document.getElementById('loading');
+            const progressBar = document.getElementById('progressBar');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                alert('الرجاء اختيار ملف أولاً! 📁');
+                return;
+            }
+
+            // تحقق من اتصال السيرفر أولاً
+            try {
+                const testResponse = await fetch('/');
+                if (!testResponse.ok) {
+                    throw new Error('السيرفر مش شغال');
+                }
+            } catch (error) {
+                alert('❌ السيرفر مش شغال! تأكد من تشغيل node server.js');
+                return;
+            }
+
+            // تعطيل الزر وإظهار التحميل
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'جاري الرفع...';
+            loading.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // محاكاة شريط التقدم
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressBar.style.width = progress + '%';
+                    if (progress >= 90) clearInterval(interval);
+                }, 200);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                progressBar.style.width = '100%';
+                
+                if (result.success) {
+                    setTimeout(() => {
+                        alert(`✅ ${result.message}`);
+                        console.log('الملفات المرفوعة:', result.files);
+                        fileInput.value = '';
+                    }, 500);
+                } else {
+                    alert('❌ حدث خطأ في رفع الملفات');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`❌ خطأ في الاتصال: ${error.message}`);
+            } finally {
+                // إعادة تعيين الواجهة
+                setTimeout(() => {
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'رفع الملفات';
+                    loading.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 1000);
+            }
+        }
+
+        // إظهار اسم الملف عند اختياره
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const fileNames = Array.from(files).map(file => file.name).join(', ');
+                alert(`تم اختيار ${files.length} ملف: ${fileNames}`);
+            }
+        });
+
+        // كود سحب وإفلات الملفات
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = '#f0f3ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9ff';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            document.getElementById('fileInput').files = files;
+            const fileNames = Array.from(files).map(file => file.name).join(', ');
+            alert(`تم اختيار ${files.length} ملف عبر السحب: ${fileNames}`);
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9ff';
+        });
+
+        // تحسينات إضافية للواجهة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ صفحة التخزين السحابي جاهزة!');
+        });
+    </script>
+</body>
+</html>
